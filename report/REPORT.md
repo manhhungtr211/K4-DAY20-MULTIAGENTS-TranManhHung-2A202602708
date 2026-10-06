@@ -45,6 +45,9 @@ Nhận xét: nhóm lỗi nào chiếm đa số? Skill có thể phòng ngừa nh
 ## 5. Điều kiện `subagents` (Phần 2.3)
 
 - Các subagent đã định nghĩa (tên, vai trò, lý do thiết kế):
+  1. `explorer`: Vai trò khám phá, đọc tài liệu, kiểm tra mẫu dữ liệu và log mà không sửa đổi file. Lý do: Giúp tách biệt pha tìm hiểu và phân tích ban đầu, tránh việc sửa vội khi chưa nắm rõ bối cảnh.
+  2. `implementer`: Vai trò thực thi thay đổi mã nguồn, làm sạch dữ liệu và chạy các script test kiểm tra. Lý do: Chuyên môn hóa việc viết code và chỉnh sửa file theo yêu cầu.
+  3. `reviewer`: Vai trò kiểm tra độc lập các file đầu ra, đối chiếu quy ước và schema. Lý do: Đóng vai trò kiểm định chất lượng khách quan trước khi hoàn tất nhiệm vụ.
 - `subagent_calls` ở từng tác vụ và nhận xét (kể cả trường hợp bằng 0):
 - Thông tin thiếu hoặc thừa khi giao việc (nếu có giao việc):
 - Ảnh hưởng đến token và thời gian:
