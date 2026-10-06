@@ -3,13 +3,15 @@
 Pseudo-code: guides/pseudocode/01_agent.md
 Kiểm tra:    pytest tests/test_02_agent.py
 """
+import os
 from pathlib import Path
+import sys
 
-# TODO 1: import các thành phần cần dùng, ví dụ:
-#   from deepagents import create_deep_agent
-#   from deepagents.backends import LocalShellBackend
-#   from .model import make_model
-#   from .subagents import get_subagents
+from deepagents import create_deep_agent
+from deepagents.backends import LocalShellBackend
+
+from .model import make_model
+from .subagents import get_subagents
 
 # ---- CÓ SẴN, KHÔNG SỬA: system prompt dùng chung cho mọi sinh viên (để đường cơ sở so sánh được) ----
 PATHS_NOTE = (
@@ -38,7 +40,7 @@ SUBAGENTS_NOTE = (
 # --------------------------------------------------------------------------------------------------
 
 
-def make_backend(sandbox: Path):
+def make_backend(sandbox: Path) -> LocalShellBackend:
     """Tạo backend (môi trường thực thi) cho tác tử.
 
     Yêu cầu:
@@ -47,7 +49,38 @@ def make_backend(sandbox: Path):
       - Tác tử chạy được lệnh shell và gọi được `python` (cần đặt PATH).
       - KHÔNG chuyển biến môi trường của bạn vào shell của tác tử (khóa API không được lộ).
     """
-    raise NotImplementedError("TODO 2: cài đặt make_backend (xem guides/pseudocode/01_agent.md)")
+    py_dir = str(Path(sys.executable).parent)
+    paths = [py_dir]
+
+    # Hỗ trợ Windows: bổ sung Git usr/bin (chứa sh, which, env, cat, ls) để lệnh shell hoạt động đúng
+    git_usr_bin = Path("C:/Program Files/Git/usr/bin")
+    if git_usr_bin.is_dir():
+        paths.append(str(git_usr_bin))
+    git_cmd = Path("C:/Program Files/Git/cmd")
+    if git_cmd.is_dir():
+        paths.append(str(git_cmd))
+
+    # Đường dẫn chuẩn POSIX
+    paths.extend(["/usr/local/bin", "/usr/bin", "/bin"])
+
+    sep = ";" if sys.platform == "win32" else ":"
+    env = {
+        "PATH": sep.join(paths),
+        "HOME": str(sandbox),
+        "PYTHONDONTWRITEBYTECODE": "1",
+    }
+    if sys.platform == "win32":
+        for win_var in ("SYSTEMROOT", "SystemRoot", "COMSPEC"):
+            if win_var in os.environ:
+                env[win_var] = os.environ[win_var]
+
+    return LocalShellBackend(
+        root_dir=sandbox,
+        virtual_mode=True,
+        inherit_env=False,
+        env=env,
+        timeout=120,
+    )
 
 
 def build_agent(sandbox: Path, mode: str = "single", use_skills: bool = False, model=None):
@@ -64,4 +97,26 @@ def build_agent(sandbox: Path, mode: str = "single", use_skills: bool = False, m
     mode không hợp lệ -> ném ValueError.
     Trả về: đồ thị (graph) đã biên dịch, gọi bằng `.invoke({"messages": [...]})`.
     """
-    raise NotImplementedError("TODO 3: cài đặt build_agent (xem guides/pseudocode/01_agent.md)")
+    if mode not in {"single", "subagents"}:
+        raise ValueError(f"Unknown mode: {mode!r}. Expected 'single' or 'subagents'.")
+
+    kwargs = {}
+    prompt = BASE_PROMPT
+
+    if mode == "subagents":
+        kwargs["subagents"] = [
+            {**sub, "system_prompt": sub["system_prompt"] + " " + PATHS_NOTE}
+            for sub in get_subagents()
+        ]
+        prompt = prompt + SUBAGENTS_NOTE
+
+    if use_skills:
+        kwargs["skills"] = ["/skills/"]
+        prompt = prompt + SKILLS_NOTE
+
+    return create_deep_agent(
+        model=model or make_model(),
+        system_prompt=prompt,
+        backend=make_backend(sandbox),
+        **kwargs,
+    )
