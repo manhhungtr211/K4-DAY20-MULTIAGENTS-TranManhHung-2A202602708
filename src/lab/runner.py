@@ -108,17 +108,23 @@ def run_task(task_id: str, condition: str, results_dir="results", model=None, re
         messages = []
         final_message = ""
         try:
-            result = agent.invoke(
+            for state in agent.stream(
                 {"messages": [{"role": "user", "content": task.instruction}]},
                 config={"callbacks": [usage], "recursion_limit": recursion_limit},
-            )
-            messages = result.get("messages", [])
+                stream_mode="values",
+            ):
+                if isinstance(state, dict) and "messages" in state:
+                    messages = state["messages"]
             for m in reversed(messages):
                 if isinstance(m, AIMessage) and m.content:
                     final_message = str(m.content)
                     break
         except Exception as exc:  # noqa: BLE001
             record["error"] = f"{type(exc).__name__}: {exc}"
+            for m in reversed(messages):
+                if isinstance(m, AIMessage) and m.content:
+                    final_message = str(m.content)
+                    break
 
         t1 = time.time()
         record["seconds"] = round(t1 - t0, 1)

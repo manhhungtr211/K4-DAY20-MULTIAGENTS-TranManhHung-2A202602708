@@ -9,7 +9,7 @@
 
 - Nhà cung cấp và mô hình (`LAB_MODEL`, không ghi khóa API), nhiệt độ (`LAB_TEMPERATURE`), `recursion_limit`: OpenRouter (openai/gpt-4o-mini), nhiệt độ 0, recursion_limit 60
 - Phiên bản Deep Agents (`pip show deepagents`), hệ điều hành, chạy trực tiếp hay trong Docker: deepagents 0.7.21, Windows (chạy trực tiếp)
-- Số lần chạy tác vụ đã dùng / ngân sách: 0 / 30
+- Số lần chạy tác vụ đã dùng / ngân sách: 3 / 30
 - Commit của tag `freeze`:
 
 ## 2. Giả thuyết (commit TRƯỚC tag `freeze`, Phần 4.0)
@@ -34,13 +34,18 @@
 
 ## 4. Đường cơ sở và phân loại lỗi (Phần 2.2)
 
-> Chỉ dùng tác vụ học. Mỗi dòng là một check thất bại.
-
 | Tác vụ | Check thất bại | Nhóm lỗi (A-G) | Bằng chứng (trích ngắn từ `detail` hoặc vết) |
 |---|---|---|---|
-| | | | |
+| `code-learn` | `rule_type_hints` | E | RULE: every public function has type annotations on all parameters and return value |
+| `code-learn` | `rule_regression_tests` | E | RULE: add tests/test_regressions.py with one test function per bug you fixed |
+| `code-learn` | `rule_changelog` | E | RULE: record each fix in CHANGELOG.md under heading '## Unreleased' as bullet '- fix(<function>): ...' |
+| `code-learn` | `parse_price_all_formats` | D | wrong for: ['$1,299.50', '$1,000,000.00'] |
+| `code-learn` | `csv_quoting_follows_docstring` | A | to_csv_row returned 'Desk, large "oak",10.00,2' |
+| `data-learn` | `rule_clean_csv` | E | RULE: write workspace/clean.csv with the header order_id,timestamp_utc,region,amount_cents |
+| `data-learn` | `rule_money_in_cents` | E | FileNotFoundError: answer.json không được tạo xong trước khi chạm recursion limit |
+| `logs-learn` | `valid_structure` | D | JSONDecodeError: Expecting property name enclosed in double quotes |
 
-Nhận xét: nhóm lỗi nào chiếm đa số? Skill có thể phòng ngừa nhóm đó không?
+Nhận xét: nhóm lỗi chiếm đa số là nhóm E (Vi phạm quy ước tổ chức ngầm không nêu trong đề bài) và nhóm D (Bỏ sót định dạng/dữ liệu bẩn). Kỹ năng tự sinh (Skill) hoàn toàn có thể phòng ngừa triệt để nhóm E thông qua các checklist quy ước trước khi kết thúc tác vụ.
 
 ## 5. Điều kiện `subagents` (Phần 2.3)
 
